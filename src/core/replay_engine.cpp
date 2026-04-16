@@ -1,8 +1,6 @@
 #include "ToastyReplay.hpp"
 #include "core/checkpoint_handler.hpp"
 #include "hacks/autoclicker.hpp"
-#include "gui/gui.hpp"
-#include "gui/frame_editor.hpp"
 
 #include <Geode/modify/GJBaseGameLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
@@ -213,11 +211,11 @@ class $modify(MacroEngineBaseLayer, GJBaseGameLayer) {
 
     void dispatchTTRInputs(int tick, int effectiveTick, int stepDelta) {
         auto* engine = ReplayEngine::get();
-        auto& inputList = engine->activeTTR->inputs;
+        const auto& inputList = engine->activeTTR->inputs;
         AccuracyMode accuracyMode = engine->activeTTR->accuracyMode;
 
         while (engine->executeIndex < inputList.size()) {
-            auto const& input = inputList[engine->executeIndex];
+            const auto& input = inputList[engine->executeIndex];
             if (input.tick > effectiveTick) {
                 break;
             }
@@ -236,11 +234,11 @@ class $modify(MacroEngineBaseLayer, GJBaseGameLayer) {
 
     void dispatchGDRInputs(int tick, int effectiveTick, int stepDelta) {
         auto* engine = ReplayEngine::get();
-        auto& inputList = engine->activeMacro->inputs;
+        const auto& inputList = engine->activeMacro->inputs;
         AccuracyMode accuracyMode = engine->activeMacro->accuracyMode;
 
         while (engine->executeIndex < inputList.size()) {
-            auto const& input = inputList[engine->executeIndex];
+            const auto& input = inputList[engine->executeIndex];
             int inputTick = static_cast<int>(input.frame);
             if (inputTick > effectiveTick) {
                 break;
@@ -285,7 +283,7 @@ class $modify(MacroEngineBaseLayer, GJBaseGameLayer) {
 
         if (m_player1->m_isDead) {
             m_player1->releaseAllButtons();
-            m_player2->releaseAllButtons();
+            if (m_player2) m_player2->releaseAllButtons();
             return;
         }
 
@@ -336,7 +334,7 @@ class $modify(MacroEngineBaseLayer, GJBaseGameLayer) {
         }
 
         int tick = computeCurrentTick();
-        bool resumedPlayer2 = keepSecondPlayerSlot(this) ? player2 : false;
+        bool resumedPlayer2 = keepSecondPlayerSlot(this) && player2;
         int resumedSlot = resumedPlayer2 ? 1 : 0;
         int playerIndex = deferredSlotForPlayer(m_levelSettings->m_twoPlayerMode, player2);
         bool delayedInputQueued = engine->deferredInputTick[playerIndex] != -1;
@@ -356,11 +354,7 @@ class $modify(MacroEngineBaseLayer, GJBaseGameLayer) {
             return GJBaseGameLayer::handleButton(hold, button, player2);
         }
 
-        bool recordPlayer2 = player2;
-        if (!keepSecondPlayerSlot(this)) {
-            recordPlayer2 = false;
-        }
-
+        bool recordPlayer2 = keepSecondPlayerSlot(this) && player2;
         int recordSlot = recordPlayer2 ? 1 : 0;
         PlayerObject* targetPlayer = recordPlayer2 ? m_player2 : m_player1;
         bool trackHoldTransition = isTrackedHoldButton(button) && targetPlayer;
